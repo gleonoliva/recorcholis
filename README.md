@@ -1,3 +1,3 @@
-# RecÃ³rcholis
+# Recórcholis
 
-AutomatizaciÃ³n de manufactura para bolis chispitas
+Automatización de manufactura para bolis chispitas
