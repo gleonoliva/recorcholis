@@ -3,23 +3,29 @@
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
+// Estos son los numeros de pines en la tarjeta arduino
 const byte BTN_1 = 7;
 const byte BTN_2 = 8;
 const byte BTN_3 = 9;
 
+// Minimo numero de bolis a llenar y sellar
 const int MIN_BOLIS = 1;
 
+// Estado de execution general del programa
 enum Estado {
 	Inicial,
 	Menu,
 	Trabajando,
 };
 
+// Los pasos del menu
 enum PasosMenu {
 	Tipo,
-	Cantidad
+	Cantidad,
+	Confirmar
 };
 
+// Tipos de bolis, los pasos de trabajo dependeran de la opcion seleccionada
 enum VariedadBolis {
 	Sencillo,
 	Chamoy,
@@ -27,51 +33,61 @@ enum VariedadBolis {
 	Ultima = Frutas,
 };
 
+// Texto en pantalla para cada variedad de bolis
 static const char* VariedadNombres[] = {
 		"Sencillo        ",
 		"Chamoy          ",
 		"Frutas          "};
 
-byte botones[3];
 
+// # Variables del programa
+// Arreglos para los botones, true si esta apretado en el momento de lectura
+byte botones[3];
+// Arreglos para los valores de los botones en la iteracion pasada
+byte botones_antes[3];
+// Estado actual de ejecucion del programa, siempre empieza en el estado Inicial
 Estado estado = Inicial;
+// Variedad de bolis seleccionada por el usuario
 VariedadBolis variedad;
+// Paso actual del menu
 PasosMenu pasoMenu;
+// Numero de bolis a sellar y llenar seleccionado por el usuario
 int numeroDeBolis;
 
-void manejaMenu() {
+// Regresa true si el boton justamente acaba de dejar de ser presionado
+bool estabaApretado(int boton){
+	return !botones[boton] && botones_antes[boton];
+}
+
+// Maneja el menu, regresa al estado que tiene que transicionar para la proxima iteracion
+Estado manejaMenu() {
+	Estado nuevoEstado = estado;
 	switch(pasoMenu) {
 		case Tipo:
-			if (botones[0]) {
-				variedad = max(0, variedad - 1);
-			}
-
-			if (botones[1]) {
-				variedad = min(Ultima, variedad+1);
-			}
-
 			lcd.setCursor(0, 0);
 			lcd.print("Selecciona tipo:");
 			lcd.setCursor(0, 1);
 			lcd.print(VariedadNombres[variedad]);
 
-			if (botones[2]) {
+			// Variedad anterior
+			if (estabaApretado(0)) {
+				variedad = max(0, variedad - 1);
+			}
+
+			// Variedad siguiente
+			if (estabaApretado(1)) {
+				variedad = min(Ultima, variedad+1);
+			}
+
+			if (estabaApretado(2)) {
+				// Pasamos a la seleccion de cantidad
 				pasoMenu = Cantidad;
 				lcd.clear();
 			}
 
-			delay(200);
-
 			break;
 
 		case Cantidad:
-
-			if (botones[0]) {
-				numeroDeBolis = max(MIN_BOLIS, numeroDeBolis - 1);
-			}
-			if (botones[1]) {
-				numeroDeBolis++;
-			}
 
 			lcd.setCursor(0, 0);
 			lcd.print("Numero de Bolis");
@@ -79,15 +95,52 @@ void manejaMenu() {
 			lcd.print(numeroDeBolis);
 			lcd.print(" ");
 
-			delay(200);
-
-			if (botones[2]) {
-				estado = Trabajando;
-				lcd.clear();
+			// Menos uno, respetando el minimo de bolis
+			if (estabaApretado(0)) {
+				numeroDeBolis = max(MIN_BOLIS, numeroDeBolis - 1);
 			}
 
+			if (estabaApretado(1)) {
+				numeroDeBolis++; // Seria bueno poner un maximo?
+			}
+
+			if (estabaApretado(2)) {
+				lcd.clear();
+				pasoMenu = Confirmar;
+			}
 			break;
+
+		case Confirmar:
+
+			lcd.setCursor(0, 0);
+			lcd.print("Estas segur@?");
+			lcd.setCursor(0, 1);
+			lcd.print(numeroDeBolis);
+
+			// Cualquiera de los otros botones para volver a empezar
+			if (estabaApretado(0) || estabaApretado(1)) {
+				pasoMenu = Tipo;
+			}
+
+			// Confirma y empieza el trabajo
+			if (estabaApretado(2)) {
+				nuevoEstado = Trabajando;
+			}
+			break;
+
 	}
+	return nuevoEstado;
+}
+
+
+
+void trabajar(){
+	lcd.print("Trabajando...");
+	// Aqui iria todo el codigo para llenar y sellar
+	delay(6000); // Simula el trabajo
+
+
+
 }
 
 void setup() {
@@ -101,25 +154,27 @@ void setup() {
 
 void loop() {
 
-	botones[0] = digitalRead(BTN_1) == HIGH;
-	botones[1] = digitalRead(BTN_2) == HIGH;
-	botones[2] = digitalRead(BTN_3) == HIGH;
+	botones[0] = digitalRead(BTN_1) == HIGH; // -  Menos
+	botones[1] = digitalRead(BTN_2) == HIGH; // +  Mas
+	botones[2] = digitalRead(BTN_3) == HIGH; // [] Confirmar
 
 	switch(estado) {
 		case Inicial:
-			estado = Menu;
 			variedad = Sencillo;
 			pasoMenu = Tipo;
 			numeroDeBolis = MIN_BOLIS;
+			estado = Menu;
 			break;
 		case Menu:
-			manejaMenu();
+			estado = manejaMenu();
 			break;
 		case Trabajando:
-			lcd.print("Trabajando...");
-			delay(numeroDeBolis * 1000);
+			trabajar();
 			estado = Inicial;
 			break;
 
 	}
+
+	delay(50); // Para refrescar la pantalla
+	memcpy(botones_antes, botones, sizeof botones);
 }
