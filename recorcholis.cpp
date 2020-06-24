@@ -55,7 +55,7 @@ PasosMenu pasoMenu;
 int numeroDeBolis;
 
 // Regresa true si el boton justamente acaba de dejar de ser presionado
-bool estabaApretado(int boton){
+bool estabaPresionado(int boton){
 	return !botones[boton] && botones_antes[boton];
 }
 
@@ -70,16 +70,16 @@ Estado manejaMenu() {
 			lcd.print(VariedadNombres[variedad]);
 
 			// Variedad anterior
-			if (estabaApretado(0)) {
+			if (estabaPresionado(0)) {
 				variedad = max(0, variedad - 1);
 			}
 
 			// Variedad siguiente
-			if (estabaApretado(1)) {
+			if (estabaPresionado(1)) {
 				variedad = min(Ultima, variedad+1);
 			}
 
-			if (estabaApretado(2)) {
+			if (estabaPresionado(2)) {
 				// Pasamos a la seleccion de cantidad
 				pasoMenu = Cantidad;
 				lcd.clear();
@@ -96,15 +96,15 @@ Estado manejaMenu() {
 			lcd.print(" ");
 
 			// Menos uno, respetando el minimo de bolis
-			if (estabaApretado(0)) {
+			if (estabaPresionado(0)) {
 				numeroDeBolis = max(MIN_BOLIS, numeroDeBolis - 1);
 			}
 
-			if (estabaApretado(1)) {
+			if (estabaPresionado(1)) {
 				numeroDeBolis++; // Seria bueno poner un maximo?
 			}
 
-			if (estabaApretado(2)) {
+			if (estabaPresionado(2)) {
 				lcd.clear();
 				pasoMenu = Confirmar;
 			}
@@ -118,12 +118,12 @@ Estado manejaMenu() {
 			lcd.print(numeroDeBolis);
 
 			// Cualquiera de los otros botones para volver a empezar
-			if (estabaApretado(0) || estabaApretado(1)) {
+			if (estabaPresionado(0) || estabaPresionado(1)) {
 				pasoMenu = Tipo;
 			}
 
 			// Confirma y empieza el trabajo
-			if (estabaApretado(2)) {
+			if (estabaPresionado(2)) {
 				nuevoEstado = Trabajando;
 			}
 			break;
